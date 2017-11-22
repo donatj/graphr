@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -84,7 +83,7 @@ func getVal(scmd string) int {
 
 func main() {
 	t := tstack{
-		size: width() - 1,
+		size: width() - 2,
 		Amin: 1<<31 - 1,
 		Amax: -1 << 31,
 	}
@@ -95,8 +94,7 @@ func main() {
 	fmt.Print("\n\n\n\033[3A\0337")
 	//	ii := 1
 	for {
-		val := rand.Intn(1000)
-		val = getVal(cmd)
+		val := getVal(cmd)
 		t.Push(val)
 
 		min := t.Min()
@@ -104,17 +102,12 @@ func main() {
 		dif := max - min
 
 		for _, i := range t.Stack {
-
 			gi := 0
 			if dif != 0 {
 				gi = ((i - min) * 8) / dif
 			}
-			_ = gi
 
-			//			fmt.Print(glyphs[gi])
 			fmt.Print(glyphs[gi])
-
-			//			fmt.Println(glyphs[], val, len(t.Stack))
 		}
 
 		fmt.Print("\n", val, " of ", max, "(", t.Amin, "/", t.Amax, ")")
