@@ -90,6 +90,11 @@ func main() {
 
 	args := flag.Args()
 	cmd := strings.Join(args, " ")
+	cmd = strings.TrimSpace(cmd)
+
+	if cmd == "" {
+		log.Fatal("missing value providing command argument")
+	}
 
 	fmt.Print("\n\n\n\033[3A\0337")
 	//	ii := 1
