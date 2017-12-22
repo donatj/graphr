@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -34,7 +36,7 @@ func (t *tstack) Push(i int) {
 	t.Stack = append(t.Stack, i)
 
 	if len(t.Stack) > t.size {
-		t.Stack = t.Stack[1:]
+		t.Stack = t.Stack[len(t.Stack)-t.size:]
 	}
 }
 
@@ -63,6 +65,24 @@ func init() {
 	flag.Parse()
 }
 
+func init() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+
+	fmt.Print("\033[?7l")
+	fmt.Println("\033[?25l")
+
+	go func() {
+		<-c
+
+		fmt.Println("\033[?7h")
+		fmt.Println("\033[?25h\033[?0c")
+
+		os.Exit(1)
+	}()
+}
+
 func getVal(scmd string) int {
 	cmd := exec.Command("bash", "-c", scmd)
 	out, err := cmd.Output()
@@ -83,7 +103,7 @@ func getVal(scmd string) int {
 
 func main() {
 	t := tstack{
-		size: width() - 2,
+		size: width(),
 		Amin: 1<<31 - 1,
 		Amax: -1 << 31,
 	}
@@ -96,9 +116,14 @@ func main() {
 		log.Fatal("missing value providing command argument")
 	}
 
-	fmt.Print("\n\n\n\033[3A\0337")
+	/// move down 3 lines and then back up
+	// making space if we're at the bottom of the terminal
+	fmt.Print("\n\n\n\033[3A")
+	fmt.Print("\0337")
 	//	ii := 1
 	for {
+		t.size = width()
+
 		val := getVal(cmd)
 		t.Push(val)
 
@@ -106,6 +131,7 @@ func main() {
 		max := t.Max()
 		dif := max - min
 
+		fmt.Print("\033[K")
 		for _, i := range t.Stack {
 			gi := 0
 			if dif != 0 {
@@ -115,10 +141,10 @@ func main() {
 			fmt.Print(glyphs[gi])
 		}
 
-		fmt.Print("\n", val, " of ", max, "(", t.Amin, "/", t.Amax, ")")
-		//		fmt.Printf("%#v", t.Stack)
-		time.Sleep(5000 * time.Millisecond)
+		fmt.Print("\n\033[J", val, " of ", max, "(", t.Amin, "/", t.Amax, ")")
 		fmt.Print("\0338")
+
+		time.Sleep(5000 * time.Millisecond)
 	}
 }
 
